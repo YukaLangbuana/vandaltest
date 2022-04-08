@@ -1,2 +1,2 @@
-# tebet
-Pythonic performance testing for your API
+# Mayhem
+Controlled mayhem for performance testing
