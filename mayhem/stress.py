@@ -25,7 +25,7 @@ def stress_test(
 
     if type(data) is not dict:
         raise TypeError(f"data must be a dict, not {type(data)}")
-    
+
     responses = Queue()
     threads = []
     test_is_running = True
@@ -33,11 +33,7 @@ def stress_test(
     def request_thread(method, endpoint, params, data, headers, list_to_append):
         while test_is_running:
             response = requests.request(
-                method,
-                endpoint,
-                params=params,
-                data=json.dumps(data),
-                headers=headers
+                method, endpoint, params=params, data=json.dumps(data), headers=headers
             )
             list_to_append.put(response)
 
