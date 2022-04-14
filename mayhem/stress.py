@@ -1,8 +1,10 @@
 import time
 import json
 import requests
+import pandas as pd
 from threading import Thread
-from queue import Queue
+from datetime import datetime
+from multiprocessing import Manager
 
 
 def stress_test(
@@ -26,7 +28,7 @@ def stress_test(
     if type(data) is not dict:
         raise TypeError(f"data must be a dict, not {type(data)}")
 
-    responses = Queue()
+    responses = Manager().dict()
     threads = []
     test_is_running = True
 
@@ -35,7 +37,12 @@ def stress_test(
             response = requests.request(
                 method, endpoint, params=params, data=json.dumps(data), headers=headers
             )
-            list_to_append.put(response)
+            responses[datetime.now()] = {
+                "status_code": response.status_code,
+                "#VUS": len(threads),
+                "response_time": response.elapsed.total_seconds(),
+                "response_size": len(response.content),
+            }
 
     start = time.time()
     while time.time() - start < duration:
@@ -63,4 +70,6 @@ def stress_test(
             thread.join(timeout=int(vus / expidite_shutdown_timeout))
         else:
             thread.join()
-    return None
+    
+    result = pd.DataFrame.from_dict(responses, orient="index")
+    return result

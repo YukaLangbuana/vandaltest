@@ -2,7 +2,8 @@ import time
 import json
 import requests
 from threading import Thread
-from queue import Queue
+from datetime import datetime
+from multiprocessing import Manager
 
 
 def spike_test(
@@ -26,7 +27,7 @@ def spike_test(
     if type(data) is not dict:
         raise TypeError(f"data must be a dict, not {type(data)}")
 
-    responses = Queue()
+    responses = Manager().dict()
     threads = []
     spike_threads = []
     test_is_running = True
@@ -37,14 +38,24 @@ def spike_test(
             response = requests.request(
                 method, endpoint, params=params, data=json.dumps(data), headers=headers
             )
-            list_to_append.put(response)
+            responses[datetime.now()] = {
+                "status_code": response.status_code,
+                "#VUS": len(threads) + len(spike_threads),
+                "response_time": response.elapsed.total_seconds(),
+                "response_size": len(response.content),
+            }
 
     def spike_thread(method, endpoint, params, data, headers, list_to_append):
         while spike_is_running:
             response = requests.request(
                 method, endpoint, params=params, data=json.dumps(data), headers=headers
             )
-            list_to_append.put(response)
+            responses[datetime.now()] = {
+                "status_code": response.status_code,
+                "#VUS": len(threads) + len(spike_threads),
+                "response_time": response.elapsed.total_seconds(),
+                "response_size": len(response.content),
+            }
 
     start = time.time()
     while time.time() - start < duration:
